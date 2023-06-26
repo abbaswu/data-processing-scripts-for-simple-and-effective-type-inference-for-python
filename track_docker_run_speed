@@ -1,0 +1,40 @@
+import subprocess
+import time
+
+
+
+def get_pids():
+    popen = subprocess.Popen(
+        "ps -aux | grep 'docker run' | grep -v grep | awk '{print $2}'",
+        shell=True,
+        stdout=subprocess.PIPE
+    )
+    lines = popen.stdout.read().split()
+    pids = { int(line) for line in lines }
+    return pids
+
+
+def get_rate():
+    interval = 10
+    old_pids = get_pids()
+    time.sleep(interval)
+    new_pids = get_pids()
+    changed = new_pids - old_pids
+    return len(changed) / interval
+
+
+def average_coroutine():
+    s = yield
+    n = 1
+    while True:
+        x = yield s / n
+        s += x
+        n += 1
+
+
+c = average_coroutine()
+next(c)
+
+while True:
+    average_rate = c.send(get_rate())
+    print('\rAverage rate: %.2f new repos per second' % average_rate, end='')
